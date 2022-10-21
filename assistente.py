@@ -1,10 +1,8 @@
 import os
 import sys
-import re, unicodedata, requests, bs4 
 import speech_recognition as sr 
 import webbrowser as browser
 import urllib.request, json
-from unicodedata import normalize
 from gtts import gTTS
 from playsound import playsound
 from datetime import datetime
