@@ -51,23 +51,13 @@ def cotacao(moeda):
 	cria_audio("audios/cotacao.mp3", f"Cotação do {nome} em {data} é {valor}")
 
 def filmes():
-	url = 'https://api.themoviedb.org/3/discover/movie?sort_by=popularity.desc&api_key=337ed39273b212f686420bb756fee987'
+	url = 'https://api.themoviedb.org/3/discover/movie?sort_by=popularity.desc&api_key=<suachaveapi>'
 	resposta = urllib.request.urlopen(url)
 	dados = resposta.read()
 	jsondata = json.loads(dados)
 	filmes = jsondata['results']
 	for filme in filmes[:5]:
 		cria_audio("audios/filmes.mp3", filme['title'], lang = 'en')
-
-'''
-def previsao():
-	url = "http://apiadvisor.climatempo.com.br/api/v1/anl/synoptic/locale/BR?token=fa65a2a9cde8f5d447c48c8f4a0f6848"
-	resposta = urllib.request.urlopen(url)
-	dados = resposta.read()
-	jsondata = json.loads(dados)
-	#previsao = jsondata['']
-	print(jsondata)
-'''
 
 def executa_comandos(mensagem):
 
@@ -123,12 +113,7 @@ def executa_comandos(mensagem):
 	# filmes
 	elif 'filmes' in mensagem and 'populares' in mensagem:
 		filmes()
-
-'''
-	# previsão do tempo
-	elif 'previsão' in mensagem:
-		previsao()
-'''
+		
 
 def main():
 	cria_audio("audios/ola.mp3", "Olá sou a Ana, sua assistente virtual! Como posso ajudar?")
