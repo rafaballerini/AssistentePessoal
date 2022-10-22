@@ -110,8 +110,7 @@ def executa_comandos(mensagem):
 
 	# filmes
 	elif 'filmes' in mensagem and 'populares' in mensagem:
-		filmes()
-		
+		filmes()	
 
 def main():
 	cria_audio("ola.mp3", "Olá sou a Ana, sua assistente virtual! Como posso ajudar?")
