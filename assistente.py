@@ -38,7 +38,7 @@ def noticias():
 	noticias = BeautifulSoup(site.text, 'html.parser')
 	for item in noticias.findAll('item')[:5]:
 		mensagem = item.title.text
-		cria_audio('audios/noticias.mp3', mensagem)
+		cria_audio('noticias.mp3', mensagem)
 
 def cotacao(moeda):
 	requisicao = get(f'https://economia.awesomeapi.com.br/all/{moeda}-BRL')
@@ -46,7 +46,7 @@ def cotacao(moeda):
 	nome = cotacao[moeda]['name']
 	data = cotacao[moeda]['create_date']
 	valor = cotacao[moeda]['bid']
-	cria_audio("audios/cotacao.mp3", f"Cotação do {nome} em {data} é {valor}")
+	cria_audio("cotacao.mp3", f"Cotação do {nome} em {data} é {valor}")
 
 def filmes():
 	url = 'https://api.themoviedb.org/3/discover/movie?sort_by=popularity.desc&api_key=<suachaveapi>'
@@ -55,7 +55,7 @@ def filmes():
 	jsondata = json.loads(dados)
 	filmes = jsondata['results']
 	for filme in filmes[:5]:
-		cria_audio("audios/filmes.mp3", filme['title'], lang = 'en')
+		cria_audio("filmes.mp3", filme['title'], lang = 'en')
 
 def executa_comandos(mensagem):
 
@@ -67,7 +67,7 @@ def executa_comandos(mensagem):
 	elif 'horas' in mensagem:
 		hora = datetime.now().strftime('%H:%M')
 		frase = f"Agora são {hora}"
-		cria_audio('audios/horas.mp3', frase)
+		cria_audio('horas.mp3', frase)
 
 	# desligar o computador
 	elif 'desligar computador' in mensagem and 'uma hora' in mensagem:
@@ -114,7 +114,7 @@ def executa_comandos(mensagem):
 		
 
 def main():
-	cria_audio("audios/ola.mp3", "Olá sou a Ana, sua assistente virtual! Como posso ajudar?")
+	cria_audio("ola.mp3", "Olá sou a Ana, sua assistente virtual! Como posso ajudar?")
 	while True:
 		monitora_audio()
 
