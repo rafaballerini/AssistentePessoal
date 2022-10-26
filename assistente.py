@@ -1,15 +1,16 @@
 import os
 import sys
-import re, unicodedata, requests, bs4 
 import speech_recognition as sr 
 import webbrowser as browser
-import urllib.request, json
-from unicodedata import normalize
+import urllib.request, json, requests
+import translate
+import subprocess
 from gtts import gTTS
 from playsound import playsound
 from datetime import datetime
 from bs4 import BeautifulSoup
 from requests import get
+from translate import Translator
 
 def cria_audio(audio, mensagem, lang = 'pt-br'):
 	tts = gTTS(mensagem, lang = lang)
@@ -40,7 +41,7 @@ def noticias():
 	noticias = BeautifulSoup(site.text, 'html.parser')
 	for item in noticias.findAll('item')[:5]:
 		mensagem = item.title.text
-		cria_audio('audios/noticias.mp3', mensagem)
+		cria_audio('noticias.mp3', mensagem)
 
 def cotacao(moeda):
 	requisicao = get(f'https://economia.awesomeapi.com.br/all/{moeda}-BRL')
@@ -48,26 +49,51 @@ def cotacao(moeda):
 	nome = cotacao[moeda]['name']
 	data = cotacao[moeda]['create_date']
 	valor = cotacao[moeda]['bid']
-	cria_audio("audios/cotacao.mp3", f"Cotação do {nome} em {data} é {valor}")
+	cria_audio("cotacao.mp3", f"Cotação do {nome} em {data} é {valor}")
 
 def filmes():
-	url = 'https://api.themoviedb.org/3/discover/movie?sort_by=popularity.desc&api_key=337ed39273b212f686420bb756fee987'
+	token = "<suachaveapi>"
+	url = 'https://api.themoviedb.org/3/discover/movie?sort_by=popularity.desc&api_key={token}'
 	resposta = urllib.request.urlopen(url)
 	dados = resposta.read()
 	jsondata = json.loads(dados)
-	filmes = jsondata['results']
+	filmes = jsondata = json.loads(dados)['results']
 	for filme in filmes[:5]:
-		cria_audio("audios/filmes.mp3", filme['title'], lang = 'en')
+		cria_audio("filmes.mp3", filme['title'], lang = 'en')
 
-'''
-def previsao():
-	url = "http://apiadvisor.climatempo.com.br/api/v1/anl/synoptic/locale/BR?token=fa65a2a9cde8f5d447c48c8f4a0f6848"
-	resposta = urllib.request.urlopen(url)
-	dados = resposta.read()
-	jsondata = json.loads(dados)
-	#previsao = jsondata['']
-	print(jsondata)
-'''
+def clima(cidade):
+	token = "<suachaveapi>"
+	base_url = "http://api.openweathermap.org/data/2.5/weather?"
+	complete_url = base_url + "appid=" + token + "&q=" + cidade
+	response = requests.get(complete_url)
+	retorno = response.json()
+	if retorno["cod"] == 200:
+	    valor = retorno["main"]
+	    current_temperature = valor["temp"]
+	    current_humidiy = valor["humidity"]
+	    tempo = retorno["weather"]
+	    weather_description = tempo[0]["description"]
+	    clima = (f"Em {cidade} a temperatura é de {str(int(current_temperature - 273.15))} graus celcius e humidade de {str(current_humidiy)} %")
+	    cria_audio("clima.mp3", clima)
+	else:
+		cria_audio("erro.mp3", "Infelizmente não entendi, pode repetir por favor?")
+
+def tradutor(traducao):
+	if traducao == 'inglês':
+		traduz = Translator(from_lang="pt-br", to_lang='english')
+		cria_audio("traducao.mp3", "O que você gostaria de traduzir para o inglês?")
+		mensagem = monitora_audio()
+		traduzido = traduz.translate(mensagem)
+		cria_audio("traducao.mp3", f"A tradução de {mensagem} é")
+		cria_audio("traducao_eng.mp3", traduzido, lang = 'en')
+	elif traducao == 'português':
+		traduz = Translator(from_lang="english", to_lang='pt-br')
+		cria_audio("traducao.mp3", "O que você gostaria de traduzir para o português?")
+		mensagem = monitora_audio()
+		traduzido = traduz.translate(mensagem)
+		cria_audio("traducao.mp3", f"A tradução de")
+		cria_audio("traducao_eng.mp3", mensagem, lang = 'en')
+		cria_audio('traducao_port.mp3', f"é {traduzido}" )
 
 def executa_comandos(mensagem):
 
@@ -79,7 +105,7 @@ def executa_comandos(mensagem):
 	elif 'horas' in mensagem:
 		hora = datetime.now().strftime('%H:%M')
 		frase = f"Agora são {hora}"
-		cria_audio('audios/horas.mp3', frase)
+		cria_audio('horas.mp3', frase)
 
 	# desligar o computador
 	elif 'desligar computador' in mensagem and 'uma hora' in mensagem:
@@ -90,9 +116,16 @@ def executa_comandos(mensagem):
 		os.system("shutdown -a")
 
 	# pesquisa no google
-	elif 'pesquisar' in mensagem:
+	elif 'pesquisar' in mensagem and 'google' in mensagem:
 		mensagem = mensagem.replace('pesquisar', '')
+		mensagem = mensagem.replace('google', '')
 		browser.open(f'https://google.com/search?q={mensagem}')
+
+	# pesquisa no youtube
+	elif 'pesquisar' in mensagem and 'youtube' in mensagem:
+		mensagem = mensagem.replace('pesquisar', '')
+		mensagem = mensagem.replace('youtube', '')
+		browser.open(f'https://youtube.com/results?search_query={mensagem}')
 
 	# spotify
 	elif 'melhor' in mensagem and 'música' in mensagem:
@@ -124,14 +157,44 @@ def executa_comandos(mensagem):
 	elif 'filmes' in mensagem and 'populares' in mensagem:
 		filmes()
 
-'''
-	# previsão do tempo
-	elif 'previsão' in mensagem:
-		previsao()
-'''
+	# clima
+	elif 'clima' in mensagem:
+		mensagem = mensagem.replace('clima', '')
+		mensagem = mensagem.replace('em', '')
+		clima(mensagem[2:])
+	elif 'temperatura' in mensagem:
+		mensagem = mensagem.replace('temperatura', '')
+		mensagem = mensagem.replace('em', '')
+		clima(mensagem[2:])
+
+	# abrir programas do computador
+	elif 'abrir' in mensagem and 'google chrome' in mensagem:
+		os.startfile("<caminho para google chrome na sua máquina>")
+	elif 'abrir' in mensagem and 'visual studio' in mensagem:
+		os.startfile("<caminho para visual studio na sua máquina>")
+	elif 'abrir' in mensagem and 'visual studio code' in mensagem:
+		os.startfile("<caminho para visual studio code na sua máquina>")
+	elif 'abrir' in mensagem and 'discord' in mensagem:
+		os.startfile("<caminho para discord na sua máquina>")
+	elif 'abrir' in mensagem and 'notion' in mensagem:
+		os.startfile("<caminho para notion na sua máquina>")
+
+	# tradutor
+	elif 'traduzir' in mensagem and 'inglês' in mensagem:
+		tradutor('inglês')
+	elif 'traduzir' in mensagem and 'português' in mensagem:
+		tradutor('português')
+
+	# lembrete
+	elif 'novo' in mensagem and 'lembrete' in mensagem:
+		cria_audio("lembrete.mp3", "O que você gostaria de anotar no lembrete?")
+		lembrete = monitora_audio()
+		os.system(f'c: && cd C:/Program Files/Conceptworld/Notezilla && Notezilla.exe /CreateNewNote "{lembrete}"')
+	elif 'mostrar' in mensagem and 'lembrete' in mensagem:
+		os.system('c: && cd C:/Program Files/Conceptworld/Notezilla && Notezilla.exe /BringNotesOnTop')
 
 def main():
-	cria_audio("audios/ola.mp3", "Olá sou a Ana, sua assistente virtual! Como posso ajudar?")
+	cria_audio("ola.mp3", "Olá sou a Ana, sua assistente virtual! Como posso ajudar?")
 	while True:
 		monitora_audio()
 
